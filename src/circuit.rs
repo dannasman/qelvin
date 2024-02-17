@@ -1,6 +1,7 @@
 use std::fmt;
 use std::mem;
 use std::ops::*;
+
 use std::collections::VecDeque;
 
 #[cfg(target_arch = "x86")]
@@ -367,7 +368,7 @@ pub enum Gate {
 
 pub struct QCircuit {
     pub psi: QRegister,
-    gates: VecDeque<Gate>,
+    pub gates: VecDeque<Gate>,
 }
 
 impl QCircuit {
@@ -383,12 +384,16 @@ impl QCircuit {
                 Gate::PauliY(t) => self.psi.apply_pauli_y(t),
                 Gate::PauliZ(t) => self.psi.apply_pauli_z(t),
                 Gate::PhaseShift((theta, t)) => self.psi.apply_pshift(theta, t),
-                Gate::Unitary((g00, g01, g10, g11, t)) => self.psi.apply_unitary(g00, g01, g10, g11, t),
+                Gate::Unitary((g00, g01, g10, g11, t)) => {
+                    self.psi.apply_unitary(g00, g01, g10, g11, t)
+                }
                 Gate::CPauliX((c, t)) => self.psi.apply_controlled_pauli_x(c, t),
                 Gate::CPauliY((c, t)) => self.psi.apply_controlled_pauli_y(c, t),
                 Gate::CPauliZ((c, t)) => self.psi.apply_controlled_pauli_z(c, t),
                 Gate::CPhaseShift((theta, c, t)) => self.psi.apply_controlled_pshift(theta, c, t),
-                Gate::CUnitary((g00, g01, g10, g11, c, t)) => self.psi.apply_controlled_unitary(g00, g01, g10, g11, c, t),
+                Gate::CUnitary((g00, g01, g10, g11, c, t)) => {
+                    self.psi.apply_controlled_unitary(g00, g01, g10, g11, c, t)
+                }
             }
         }
     }
@@ -433,7 +438,16 @@ impl QCircuit {
         self.gates.push_back(Gate::CPhaseShift((theta, c, t)));
     }
 
-    pub fn controlled_unitary(&mut self, g00: Complex, g01: Complex, g10: Complex, g11: Complex, c: usize, t: usize) {
-        self.gates.push_back(Gate::CUnitary((g00, g01, g10, g11, c, t)));
+    pub fn controlled_unitary(
+        &mut self,
+        g00: Complex,
+        g01: Complex,
+        g10: Complex,
+        g11: Complex,
+        c: usize,
+        t: usize,
+    ) {
+        self.gates
+            .push_back(Gate::CUnitary((g00, g01, g10, g11, c, t)));
     }
 }

@@ -1,9 +1,11 @@
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::PySequence;
 
 mod circuit;
+mod visual;
 
 use crate::circuit::*;
+use crate::visual::*;
 
 #[pyclass]
 struct QRegisterIter {
@@ -23,24 +25,36 @@ impl QRegisterIter {
 
 #[pyclass(name = "QRegister")]
 struct PyQRegister {
-    inner: QRegister
+    inner: QRegister,
+    nqubits: usize,
 }
 
 #[pymethods]
 impl PyQRegister {
     #[new]
-    fn new(nqubits: usize) -> PyResult<Self> {
+    #[pyo3(signature = (nqubits, init_state = 0))]
+    fn new(nqubits: usize, init_state: usize) -> PyResult<Self> {
         let n: usize = 1 << nqubits;
+        if init_state >= n {
+            return Err(PyValueError::new_err("state binary given as initial sate greater than any possible binary state of the register"));
+        }
+
         let mut states: Vec<Complex> = vec![Complex::new(0.0, 0.0); n];
-        states[0].real = 1.0;
+        states[init_state].real = 1.0;
         Ok(Self {
-            inner: QRegister::new(states)
+            inner: QRegister::new(states),
+            nqubits,
         })
     }
 
     fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<QRegisterIter>> {
         let iter = QRegisterIter {
-            inner: slf.inner.iter().map(|c| (c.real, c.imag)).collect::<Vec<(f64, f64)>>().into_iter(),
+            inner: slf
+                .inner
+                .iter()
+                .map(|c| (c.real, c.imag))
+                .collect::<Vec<(f64, f64)>>()
+                .into_iter(),
         };
         Py::new(slf.py(), iter)
     }
@@ -52,7 +66,8 @@ impl PyQRegister {
 
 #[pyclass(name = "QCircuit")]
 struct PyQCircuit {
-    inner: QCircuit 
+    inner: QCircuit,
+    nqubits: usize,
 }
 
 #[pymethods]
@@ -61,6 +76,7 @@ impl PyQCircuit {
     fn new(register: &PyQRegister) -> PyResult<Self> {
         Ok(Self {
             inner: QCircuit::new(register.inner.to_owned(), std::collections::VecDeque::new()),
+            nqubits: register.nqubits,
         })
     }
 
@@ -84,7 +100,14 @@ impl PyQCircuit {
         slf.inner.pshift(theta, target);
     }
 
-    fn u(mut slf: PyRefMut<'_, Self>, a: (f64, f64), b: (f64, f64), c: (f64, f64), d: (f64, f64), target: usize) {
+    fn u(
+        mut slf: PyRefMut<'_, Self>,
+        a: (f64, f64),
+        b: (f64, f64),
+        c: (f64, f64),
+        d: (f64, f64),
+        target: usize,
+    ) {
         let g00: Complex = Complex::new(a.0, a.1);
         let g01: Complex = Complex::new(b.0, b.1);
         let g10: Complex = Complex::new(c.0, c.1);
@@ -108,12 +131,21 @@ impl PyQCircuit {
         slf.inner.controlled_pshift(theta, control, target);
     }
 
-    fn cu(mut slf: PyRefMut<'_, Self>, a: (f64, f64), b: (f64, f64), c: (f64, f64), d: (f64, f64), control: usize, target: usize) {
+    fn cu(
+        mut slf: PyRefMut<'_, Self>,
+        a: (f64, f64),
+        b: (f64, f64),
+        c: (f64, f64),
+        d: (f64, f64),
+        control: usize,
+        target: usize,
+    ) {
         let g00: Complex = Complex::new(a.0, a.1);
         let g01: Complex = Complex::new(b.0, b.1);
         let g10: Complex = Complex::new(c.0, c.1);
         let g11: Complex = Complex::new(d.0, d.1);
-        slf.inner.controlled_unitary(g00, g01, g10, g11, control, target);
+        slf.inner
+            .controlled_unitary(g00, g01, g10, g11, control, target);
     }
 
     fn run(mut slf: PyRefMut<'_, Self>) {
@@ -122,8 +154,14 @@ impl PyQCircuit {
 
     fn state(slf: PyRef<'_, Self>) -> PyResult<PyQRegister> {
         Ok(PyQRegister {
-            inner: slf.inner.psi.to_owned()
+            inner: slf.inner.psi.to_owned(),
+            nqubits: slf.nqubits,
         })
+    }
+
+    fn __repr__(slf: PyRef<'_, Self>) -> String {
+        let circuit_visual: VisualCircuit = VisualCircuit::new(slf.nqubits, &slf.inner.gates);
+        circuit_visual.circuit
     }
 }
 
