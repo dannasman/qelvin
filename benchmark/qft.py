@@ -14,7 +14,7 @@ from qelvin import QRegister, QCircuit
 
 backend = Aer.get_backend('statevector_simulator')
 
-N = 5
+N = 11
 s = random.randint(0, 2**(N+1) - 1)
 
 
