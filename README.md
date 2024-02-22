@@ -15,7 +15,7 @@ Install all the requirements in `requirements.txt`:
 ```
 pip install --requirement requirements.txt
 ```
-To compile the code use `maturin develop`. If you are not using a `x86`/`x86_64` machine leave out `RUSTFLAGS`.
+To compile the code use `maturin develop`. At the moment, if you are not using a `x86`/`x86_64` machine with `AVX2` support the code won't run properly.
 ```
 RUSTFLAGS="-C target-feature=+avx2,+fma -C target-cpu=native" maturin develop --release
 ```
@@ -26,6 +26,7 @@ You should now be able use `import qelvin` in Python files inside the directory.
 Below is a Quantum Fourier transform of a 4-qubit system.
 
 ```python
+import numpy as np
 from qelvin import QRegister, QCircuit
 
 N = 4
