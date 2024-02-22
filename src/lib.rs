@@ -47,6 +47,24 @@ impl PyQRegister {
         })
     }
 
+    fn __getitem__(slf: PyRef<'_, Self>, index: usize) -> PyResult<(f64, f64)> {
+        if index >= (1 << slf.nqubits) {
+            return Err(PyValueError::new_err("index out of bounds"));
+        }
+        let state: Complex = slf.inner[index];
+        Ok((state.real, state.imag))
+    }
+
+    fn __setitem__(mut slf: PyRefMut<'_, Self>, index: usize, value: (f64, f64)) -> PyResult<()> {
+        if index >= (1 << slf.nqubits) {
+            return Err(PyValueError::new_err("index out of bounds"));
+        }
+        let (real, imag): (f64, f64) = value;
+        slf.inner[index].real = real;
+        slf.inner[index].imag = imag;
+        Ok(())
+    }
+
     fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<QRegisterIter>> {
         let iter = QRegisterIter {
             inner: slf
