@@ -28,8 +28,6 @@ for j in range(N):
         qelvin_circ.cp(np.pi/float(2**(j-k)), j, k)
     qelvin_circ.h(j)
 
-print(qelvin_circ)
-
 qelvin_circ.run()
 
 outputstate_qelvin = qelvin_circ.state();
