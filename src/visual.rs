@@ -11,42 +11,42 @@ pub enum VisualBlock {
 }
 
 impl VisualBlock {
-    pub fn get_first_line(&self) -> String {
+    pub fn get_line(&self, n: usize) -> String {
         match self {
-            VisualBlock::HLine => String::from("   "),
-            VisualBlock::VLine => String::from(" | "),
-            VisualBlock::Gate(_) => String::from(" - "),
-            VisualBlock::Control((c, t)) => {
-                if c < t {
-                    String::from("   ")
-                } else {
-                    String::from(" | ")
+            VisualBlock::HLine => match n {
+                0..=1 |  3..=4 => String::from("         "),
+                2 => String::from("---------"),
+                _ => panic!("line number out of bounds"),
+            },
+            VisualBlock::VLine => match n {
+                0..=1 | 3..=4 => String::from("    |    "),
+                2 => String::from("----|----"),
+                _ => panic!("line number out of bounds"),
+            },
+            VisualBlock::Gate(s) => match n {
+                0 | 4 => String::from(" ------- "),
+                1 | 3 => String::from("|       |"),
+                2 => format!("|{}|", s),
+                _ => panic!("line number out of bounds"),
+            },
+            VisualBlock::Control((c, t)) => match n {
+                0..=1 => {
+                    if c < t {
+                        String::from("         ")
+                    } else {
+                        String::from("    |    ")
+                    }
                 }
-            }
-        }
-    }
-
-    pub fn get_second_line(&self) -> String {
-        match self {
-            VisualBlock::HLine => String::from("---"),
-            VisualBlock::VLine => String::from("-|-"),
-            VisualBlock::Gate(s) => format!("|{}|", s),
-            VisualBlock::Control((_, _)) => String::from("-o-"),
-        }
-    }
-
-    pub fn get_third_line(&self) -> String {
-        match self {
-            VisualBlock::HLine => String::from("   "),
-            VisualBlock::VLine => String::from(" | "),
-            VisualBlock::Gate(_) => String::from(" - "),
-            VisualBlock::Control((c, t)) => {
-                if c < t {
-                    String::from(" | ")
-                } else {
-                    String::from("   ")
+                3..=4 => {
+                    if c < t {
+                        String::from("    |    ")
+                    } else {
+                        String::from("         ")
+                    }
                 }
-            }
+                2 => String::from("----o----"),
+                _ => panic!("line number out of bounds"),
+            },
         }
     }
 }
@@ -63,12 +63,12 @@ impl VisualCircuit {
             Gate::Hadamard(t) => {
                 if !occupied[t] {
                     grid[t].pop();
-                    grid[t].push(VisualBlock::Gate(String::from("H")));
+                    grid[t].push(VisualBlock::Gate(String::from("   H   ")));
                     occupied[t] = true;
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("H")));
+                            grid[i].push(VisualBlock::Gate(String::from("   H   ")));
                             occupied[i] = true;
                         } else {
                             grid[i].push(VisualBlock::HLine);
@@ -80,12 +80,12 @@ impl VisualCircuit {
             Gate::PauliX(t) => {
                 if !occupied[t] {
                     grid[t].pop();
-                    grid[t].push(VisualBlock::Gate(String::from("X")));
+                    grid[t].push(VisualBlock::Gate(String::from("   X   ")));
                     occupied[t] = true;
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("X")));
+                            grid[i].push(VisualBlock::Gate(String::from("   X   ")));
                             occupied[i] = true;
                         } else {
                             grid[i].push(VisualBlock::HLine);
@@ -97,12 +97,12 @@ impl VisualCircuit {
             Gate::PauliY(t) => {
                 if !occupied[t] {
                     grid[t].pop();
-                    grid[t].push(VisualBlock::Gate(String::from("Y")));
+                    grid[t].push(VisualBlock::Gate(String::from("   Y   ")));
                     occupied[t] = true;
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("Y")));
+                            grid[i].push(VisualBlock::Gate(String::from("   Y   ")));
                             occupied[i] = true;
                         } else {
                             grid[i].push(VisualBlock::HLine);
@@ -114,12 +114,12 @@ impl VisualCircuit {
             Gate::PauliZ(t) => {
                 if !occupied[t] {
                     grid[t].pop();
-                    grid[t].push(VisualBlock::Gate(String::from("Z")));
+                    grid[t].push(VisualBlock::Gate(String::from("   Z   ")));
                     occupied[t] = true;
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("Z")));
+                            grid[i].push(VisualBlock::Gate(String::from("   Z   ")));
                             occupied[i] = true;
                         } else {
                             grid[i].push(VisualBlock::HLine);
@@ -128,15 +128,16 @@ impl VisualCircuit {
                     }
                 }
             }
-            Gate::PhaseShift((_, t)) => {
+            Gate::PhaseShift((theta, t)) => {
+                let theta_bounded = theta - (theta / (2.0 * PI)).trunc() * 2.0 * PI;
                 if !occupied[t] {
                     grid[t].pop();
-                    grid[t].push(VisualBlock::Gate(String::from("P")));
+                    grid[t].push(VisualBlock::Gate(format!("P({:.2})", theta_bounded)));
                     occupied[t] = true;
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("P")));
+                            grid[i].push(VisualBlock::Gate(format!("P({:.2})", theta_bounded)));
                             occupied[i] = true;
                         } else {
                             grid[i].push(VisualBlock::HLine);
@@ -148,12 +149,12 @@ impl VisualCircuit {
             Gate::Unitary((_, _, _, _, t)) => {
                 if !occupied[t] {
                     grid[t].pop();
-                    grid[t].push(VisualBlock::Gate(String::from("U")));
+                    grid[t].push(VisualBlock::Gate(String::from("   U   ")));
                     occupied[t] = true;
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("U")));
+                            grid[i].push(VisualBlock::Gate(String::from("   U   ")));
                             occupied[i] = true;
                         } else {
                             grid[i].push(VisualBlock::HLine);
@@ -169,7 +170,7 @@ impl VisualCircuit {
                     for i in min..(max + 1) {
                         grid[i].pop();
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("X")));
+                            grid[i].push(VisualBlock::Gate(String::from("   X   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -182,7 +183,7 @@ impl VisualCircuit {
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("X")));
+                            grid[i].push(VisualBlock::Gate(String::from("   X   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -204,7 +205,7 @@ impl VisualCircuit {
                     for i in min..(max + 1) {
                         grid[i].pop();
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("Y")));
+                            grid[i].push(VisualBlock::Gate(String::from("   Y   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -217,7 +218,7 @@ impl VisualCircuit {
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("Y")));
+                            grid[i].push(VisualBlock::Gate(String::from("   Y   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -239,7 +240,7 @@ impl VisualCircuit {
                     for i in min..(max + 1) {
                         grid[i].pop();
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("Z")));
+                            grid[i].push(VisualBlock::Gate(String::from("   Z   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -252,7 +253,7 @@ impl VisualCircuit {
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("Z")));
+                            grid[i].push(VisualBlock::Gate(String::from("   Z   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -267,14 +268,15 @@ impl VisualCircuit {
                     }
                 }
             }
-            Gate::CPhaseShift((_, c, t)) => {
+            Gate::CPhaseShift((theta, c, t)) => {
                 let min: usize = cmp::min(t, c);
                 let max: usize = cmp::max(t, c);
+                let theta_bounded = theta - (theta / (2.0 * PI)).trunc() * 2.0 * PI;
                 if occupied[min..(max + 1)].iter().all(|&o| o == false) {
                     for i in min..(max + 1) {
                         grid[i].pop();
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("P")));
+                            grid[i].push(VisualBlock::Gate(format!("P({:.2})", theta_bounded)));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -287,7 +289,7 @@ impl VisualCircuit {
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("P")));
+                            grid[i].push(VisualBlock::Gate(format!("P({:.2})", theta_bounded)));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -309,7 +311,7 @@ impl VisualCircuit {
                     for i in min..(max + 1) {
                         grid[i].pop();
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("U")));
+                            grid[i].push(VisualBlock::Gate(String::from("   U   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -322,7 +324,7 @@ impl VisualCircuit {
                 } else {
                     for i in 0..nqubits {
                         if i == t {
-                            grid[i].push(VisualBlock::Gate(String::from("U")));
+                            grid[i].push(VisualBlock::Gate(String::from("   U   ")));
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
@@ -340,26 +342,24 @@ impl VisualCircuit {
         });
 
         let mut circuit: String = String::new();
-        let max_len: usize = (nqubits - 1).to_string().len() + 1;
+        let max_len: usize = (nqubits - 1).to_string().len() + 3;
         for i in 0..nqubits {
-            let i_len: usize = i.to_string().len() + 1;
-            circuit.push_str(&" ".repeat(max_len + 1));
-            grid[i]
-                .iter()
-                .for_each(|g| circuit.push_str(&g.get_first_line()));
-            circuit.push_str(" \n");
-
-            circuit.push_str(&format!("{}q{}-", " ".repeat(max_len - i_len), i));
-            grid[i]
-                .iter()
-                .for_each(|g| circuit.push_str(&g.get_second_line()));
-            circuit.push_str("-\n");
-
-            circuit.push_str(&" ".repeat(max_len + 1));
-            grid[i]
-                .iter()
-                .for_each(|g| circuit.push_str(&g.get_third_line()));
-            circuit.push_str(" \n");
+            let i_len: usize = i.to_string().len() + 3;
+            for j in 0..5 {
+                if j == 2 {
+                    circuit.push_str(&format!("{}q{}---", " ".repeat(max_len - i_len), i));
+                    grid[i]
+                        .iter()
+                        .for_each(|g| circuit.push_str(&g.get_line(j)));
+                    circuit.push_str("----\n");
+                } else {
+                    circuit.push_str(&" ".repeat(max_len + 1));
+                    grid[i]
+                        .iter()
+                        .for_each(|g| circuit.push_str(&g.get_line(j)));
+                    circuit.push_str(" \n");
+                }
+            }
         }
         VisualCircuit { circuit: circuit }
     }
