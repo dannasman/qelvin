@@ -15,7 +15,7 @@ Install all the requirements in `requirements.txt`:
 ```
 pip install --requirement requirements.txt
 ```
-To compile the code use `maturin develop`. At the moment, if you are not using a `x86`/`x86_64` machine with `AVX2` support the code won't run properly.
+To compile the code use `maturin develop`. At the moment, if you are not using a `x86`/`x86_64` machine with `FMA` support the code won't run properly.
 ```
 RUSTFLAGS="-C target-feature=+avx2,+fma -C target-cpu=native" maturin develop --release
 ```
