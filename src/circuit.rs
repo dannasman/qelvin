@@ -108,12 +108,12 @@ impl QRegister {
 
                 let (m0_0, m0_1, m0_2, m0_3): (f64, f64, f64, f64) = unsafe { mem::transmute(m0) };
 
-                (state[i].real, state[i].imag) = if (1 << c) & i == 1 {
+                (state[i].real, state[i].imag) = if (1 << c) & i > 0 {
                     (m0_0, m0_1)
                 } else {
                     (state[i].real, state[i].imag)
                 };
-                (state[j].real, state[j].imag) = if (1 << c) & j == 1 {
+                (state[j].real, state[j].imag) = if (1 << c) & j > 0 {
                     (m0_2, m0_3)
                 } else {
                     (state[j].real, state[j].imag)
@@ -191,7 +191,7 @@ impl QRegister {
 
         let step_block = |state: &mut [Complex]| {
             for j in hb..b {
-                if (1 << c) & j == 1 {
+                if (1 << c) & j > 0 {
                     let ro: f64 = state[j].real;
                     let io: f64 = state[j].imag;
 
@@ -227,15 +227,17 @@ impl QRegister {
 
         let step_block = |state: &mut [Complex]| {
             for (i, j) in (0..hb).zip(hb..b) {
-                let temp: Complex = state[i];
+                let temp_real: f64 = state[i].real;
+                let temp_imag: f64 = state[i].imag;
 
-                if (1 << c) & i == 1 {
+                if (1 << c) & i > 0 {
                     state[i].real = state[j].real;
                     state[i].imag = state[j].imag;
                 }
 
-                if (1 << c) & j == 1 {
-                    state[j] = temp;
+                if (1 << c) & j > 0 {
+                    state[j].real = temp_real;
+                    state[j].imag = temp_imag;
                 }
             }
         };
@@ -268,12 +270,12 @@ impl QRegister {
             for (i, j) in (0..hb).zip(hb..b) {
                 let temp: Complex = state[i];
 
-                if (1 << c) & i == 1 {
+                if (1 << c) & i > 0 {
                     state[i].real = state[j].imag;
                     state[i].imag = -state[j].real;
                 }
 
-                if (1 << c) & j == 1 {
+                if (1 << c) & j > 0 {
                     state[j].real = -temp.imag;
                     state[j].imag = temp.real;
                 }
@@ -303,7 +305,7 @@ impl QRegister {
 
         let step_block = |state: &mut [Complex]| {
             for j in hb..b {
-                if (1 << c) & j == 1 {
+                if (1 << c) & j > 0 {
                     state[j].real = -state[j].real;
                     state[j].imag = -state[j].imag;
                 }
@@ -449,5 +451,93 @@ impl QCircuit {
     ) {
         self.gates
             .push_back(Gate::CUnitary((g00, g01, g10, g11, c, t)));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    
+    #[test]
+    fn test_hadamard() {
+        let root: f64 = 0.5f64.sqrt();
+
+        let mut states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
+        let mut states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
+
+        let mut psi0: QRegister = QRegister::new(states0);
+        let mut psi1: QRegister = QRegister::new(states1);
+
+        psi0.apply_hadamard(0);
+        psi1.apply_hadamard(0);
+
+        assert!((psi0[0].real - root).abs() < f64::EPSILON);
+        assert!((psi0[1].real - root).abs() < f64::EPSILON);
+        assert!((psi1[0].real - root).abs() < f64::EPSILON);
+        assert!((psi1[1].real + root).abs() < f64::EPSILON);
+        
+        states0 = vec![Complex::new(0.0, 1.0), Complex::new(0.0, 0.0)];
+        states1 = vec![Complex::new(0.0, 0.0), Complex::new(0.0, 1.0)];
+
+        psi0 = QRegister::new(states0);
+        psi1 = QRegister::new(states1);
+
+        psi0.apply_hadamard(0);
+        psi1.apply_hadamard(0);
+
+        assert!((psi0[0].imag - root).abs() < f64::EPSILON);
+        assert!((psi0[1].imag - root).abs() < f64::EPSILON);
+        assert!((psi1[0].imag - root).abs() < f64::EPSILON);
+        assert!((psi1[1].imag + root).abs() < f64::EPSILON);
+        
+        states0 = vec![Complex::new(0.5, 0.5), Complex::new(0.5, 0.5)];
+
+        psi0 = QRegister::new(states0);
+
+        psi0.apply_hadamard(0);
+
+        assert!((psi0[0].real - root).abs() < f64::EPSILON);
+        assert!((psi0[0].imag - root).abs() < f64::EPSILON);
+        assert!(psi0[1].real.abs() < f64::EPSILON);
+        assert!(psi0[1].imag.abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_pauli_x() {
+        let states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
+        let states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
+        
+        let mut psi0: QRegister = QRegister::new(states0);
+        let mut psi1: QRegister = QRegister::new(states1);
+
+        psi0.apply_pauli_x(0);
+        psi1.apply_pauli_x(0);
+
+        assert!(psi0[0].real.abs() < f64::EPSILON);
+        assert!((psi0[1].real - 1.0).abs() < f64::EPSILON);
+        assert!((psi1[0].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi1[1].real.abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_pauli_y() {
+        let states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
+        let states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
+        
+        let mut psi0: QRegister = QRegister::new(states0);
+        let mut psi1: QRegister = QRegister::new(states1);
+
+        psi0.apply_pauli_y(0);
+        psi1.apply_pauli_y(0);
+
+        assert!(psi0[0].real.abs() < f64::EPSILON);
+        assert!(psi0[0].imag.abs() < f64::EPSILON);
+        assert!(psi0[1].real.abs() < f64::EPSILON);
+        assert!((psi0[1].imag-1.0).abs() < f64::EPSILON);
+        
+        assert!(psi1[0].real.abs() < f64::EPSILON);
+        assert!((psi1[0].imag + 1.0).abs() < f64::EPSILON);
+        assert!(psi1[1].real.abs() < f64::EPSILON);
+        assert!(psi1[1].imag.abs() < f64::EPSILON);
     }
 }
