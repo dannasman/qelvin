@@ -14,7 +14,7 @@ impl VisualBlock {
     pub fn get_line(&self, n: usize) -> String {
         match self {
             VisualBlock::HLine => match n {
-                0..=1 |  3..=4 => String::from("         "),
+                0..=1 | 3..=4 => String::from("         "),
                 2 => String::from("---------"),
                 _ => panic!("line number out of bounds"),
             },

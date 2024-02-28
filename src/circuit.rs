@@ -458,7 +458,7 @@ impl QCircuit {
 #[cfg(test)]
 mod tests {
     use crate::*;
-    
+
     #[test]
     fn test_hadamard() {
         let root: f64 = 0.5f64.sqrt();
@@ -476,7 +476,7 @@ mod tests {
         assert!((psi0[1].real - root).abs() < f64::EPSILON);
         assert!((psi1[0].real - root).abs() < f64::EPSILON);
         assert!((psi1[1].real + root).abs() < f64::EPSILON);
-        
+
         states0 = vec![Complex::new(0.0, 1.0), Complex::new(0.0, 0.0)];
         states1 = vec![Complex::new(0.0, 0.0), Complex::new(0.0, 1.0)];
 
@@ -490,7 +490,7 @@ mod tests {
         assert!((psi0[1].imag - root).abs() < f64::EPSILON);
         assert!((psi1[0].imag - root).abs() < f64::EPSILON);
         assert!((psi1[1].imag + root).abs() < f64::EPSILON);
-        
+
         states0 = vec![Complex::new(0.5, 0.5), Complex::new(0.5, 0.5)];
 
         psi0 = QRegister::new(states0);
@@ -507,7 +507,7 @@ mod tests {
     fn test_pauli_x() {
         let mut states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
         let mut states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
-        
+
         let mut psi0: QRegister = QRegister::new(states0);
         let mut psi1: QRegister = QRegister::new(states1);
 
@@ -521,7 +521,7 @@ mod tests {
 
         states0 = vec![Complex::new(0.0, 1.0), Complex::new(0.0, 0.0)];
         states1 = vec![Complex::new(0.0, 0.0), Complex::new(0.0, 1.0)];
-        
+
         psi0 = QRegister::new(states0);
         psi1 = QRegister::new(states1);
 
@@ -532,14 +532,13 @@ mod tests {
         assert!((psi0[1].imag - 1.0).abs() < f64::EPSILON);
         assert!((psi1[0].imag - 1.0).abs() < f64::EPSILON);
         assert!(psi1[1].imag.abs() < f64::EPSILON);
-        
     }
 
     #[test]
     fn test_pauli_y() {
         let mut states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
         let mut states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
-        
+
         let mut psi0: QRegister = QRegister::new(states0);
         let mut psi1: QRegister = QRegister::new(states1);
 
@@ -549,28 +548,27 @@ mod tests {
         assert!(psi0[0].real.abs() < f64::EPSILON);
         assert!(psi0[0].imag.abs() < f64::EPSILON);
         assert!(psi0[1].real.abs() < f64::EPSILON);
-        assert!((psi0[1].imag-1.0).abs() < f64::EPSILON);
-        
+        assert!((psi0[1].imag - 1.0).abs() < f64::EPSILON);
+
         assert!(psi1[0].real.abs() < f64::EPSILON);
         assert!((psi1[0].imag + 1.0).abs() < f64::EPSILON);
         assert!(psi1[1].real.abs() < f64::EPSILON);
         assert!(psi1[1].imag.abs() < f64::EPSILON);
-        
+
         states0 = vec![Complex::new(0.0, 1.0), Complex::new(0.0, 0.0)];
         states1 = vec![Complex::new(0.0, 0.0), Complex::new(0.0, 1.0)];
-        
+
         psi0 = QRegister::new(states0);
         psi1 = QRegister::new(states1);
 
         psi0.apply_pauli_y(0);
         psi1.apply_pauli_y(0);
 
-
         assert!(psi0[0].real.abs() < f64::EPSILON);
         assert!(psi0[0].imag.abs() < f64::EPSILON);
         assert!((psi0[1].real + 1.0).abs() < f64::EPSILON);
         assert!(psi0[1].imag.abs() < f64::EPSILON);
-        
+
         assert!((psi1[0].real - 1.0).abs() < f64::EPSILON);
         assert!(psi1[0].imag.abs() < f64::EPSILON);
         assert!(psi1[1].real.abs() < f64::EPSILON);
@@ -581,7 +579,7 @@ mod tests {
     fn test_pauli_z() {
         let states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
         let states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
-        
+
         let mut psi0: QRegister = QRegister::new(states0);
         let mut psi1: QRegister = QRegister::new(states1);
 
@@ -600,7 +598,7 @@ mod tests {
 
         let states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
         let states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
-        
+
         let mut psi0: QRegister = QRegister::new(states0);
         let mut psi1: QRegister = QRegister::new(states1);
 
@@ -618,14 +616,15 @@ mod tests {
     #[test]
     fn test_unitary() {
         let theta: f64 = PI / 3.0;
+
         let g00: Complex = Complex::new(theta.cos(), -theta.sin());
         let g01: Complex = Complex::new(0.0, 0.0);
         let g10: Complex = Complex::new(0.0, 0.0);
         let g11: Complex = Complex::new(theta.cos(), theta.sin());
-        
+
         let states0: Vec<Complex> = vec![Complex::new(1.0, 0.0), Complex::new(0.0, 0.0)];
         let states1: Vec<Complex> = vec![Complex::new(0.0, 0.0), Complex::new(1.0, 0.0)];
-        
+
         let mut psi0: QRegister = QRegister::new(states0);
         let mut psi1: QRegister = QRegister::new(states1);
 
@@ -640,5 +639,309 @@ mod tests {
         assert!(psi1[0].imag < f64::EPSILON);
         assert!((psi1[1].real - theta.cos()) < f64::EPSILON);
         assert!((psi1[1].imag - theta.sin()) < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_controlled_pauli_x() {
+        let states00: Vec<Complex> = vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states01: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states10: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states11: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+        ];
+
+        let mut psi00: QRegister = QRegister::new(states00);
+        let mut psi01: QRegister = QRegister::new(states01);
+        let mut psi10: QRegister = QRegister::new(states10);
+        let mut psi11: QRegister = QRegister::new(states11);
+
+        psi00.apply_controlled_pauli_x(0, 1);
+        psi01.apply_controlled_pauli_x(0, 1);
+        psi10.apply_controlled_pauli_x(0, 1);
+        psi11.apply_controlled_pauli_x(0, 1);
+
+        assert!((psi00[0b00].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi00[0b01].real.abs() < f64::EPSILON);
+        assert!(psi00[0b10].real.abs() < f64::EPSILON);
+        assert!(psi00[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi01[0b00].real.abs() < f64::EPSILON);
+        assert!(psi01[0b01].real.abs() < f64::EPSILON);
+        assert!(psi01[0b10].real.abs() < f64::EPSILON);
+        assert!((psi01[0b11].real - 1.0).abs() < f64::EPSILON);
+
+        assert!(psi10[0b00].real.abs() < f64::EPSILON);
+        assert!(psi10[0b01].real.abs() < f64::EPSILON);
+        assert!((psi10[0b10].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi10[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi11[0b00].real.abs() < f64::EPSILON);
+        assert!((psi11[0b01].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi11[0b10].real.abs() < f64::EPSILON);
+        assert!(psi11[0b11].real.abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_controlled_pauli_y() {
+        let states00: Vec<Complex> = vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states01: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states10: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states11: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+        ];
+
+        let mut psi00: QRegister = QRegister::new(states00);
+        let mut psi01: QRegister = QRegister::new(states01);
+        let mut psi10: QRegister = QRegister::new(states10);
+        let mut psi11: QRegister = QRegister::new(states11);
+
+        psi00.apply_controlled_pauli_y(0, 1);
+        psi01.apply_controlled_pauli_y(0, 1);
+        psi10.apply_controlled_pauli_y(0, 1);
+        psi11.apply_controlled_pauli_y(0, 1);
+
+        assert!((psi00[0b00].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi00[0b01].real.abs() < f64::EPSILON);
+        assert!(psi00[0b10].real.abs() < f64::EPSILON);
+        assert!(psi00[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi01[0b00].real.abs() < f64::EPSILON);
+        assert!(psi01[0b01].real.abs() < f64::EPSILON);
+        assert!(psi01[0b10].real.abs() < f64::EPSILON);
+        assert!(psi01[0b11].real.abs() < f64::EPSILON);
+        assert!((psi01[0b11].imag - 1.0).abs() < f64::EPSILON);
+
+        assert!(psi10[0b00].real.abs() < f64::EPSILON);
+        assert!(psi10[0b01].real.abs() < f64::EPSILON);
+        assert!((psi10[0b10].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi10[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi11[0b00].real.abs() < f64::EPSILON);
+        assert!((psi11[0b01].imag + 1.0).abs() < f64::EPSILON);
+        assert!(psi11[0b01].real.abs() < f64::EPSILON);
+        assert!(psi11[0b10].real.abs() < f64::EPSILON);
+        assert!(psi11[0b11].real.abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_controlled_pauli_z() {
+        let states00: Vec<Complex> = vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states01: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states10: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states11: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+        ];
+
+        let mut psi00: QRegister = QRegister::new(states00);
+        let mut psi01: QRegister = QRegister::new(states01);
+        let mut psi10: QRegister = QRegister::new(states10);
+        let mut psi11: QRegister = QRegister::new(states11);
+
+        psi00.apply_controlled_pauli_z(0, 1);
+        psi01.apply_controlled_pauli_z(0, 1);
+        psi10.apply_controlled_pauli_z(0, 1);
+        psi11.apply_controlled_pauli_z(0, 1);
+
+        assert!((psi00[0b00].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi00[0b01].real.abs() < f64::EPSILON);
+        assert!(psi00[0b10].real.abs() < f64::EPSILON);
+        assert!(psi00[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi01[0b00].real.abs() < f64::EPSILON);
+        assert!((psi01[0b01].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi01[0b10].real.abs() < f64::EPSILON);
+        assert!(psi01[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi10[0b00].real.abs() < f64::EPSILON);
+        assert!(psi10[0b01].real.abs() < f64::EPSILON);
+        assert!((psi10[0b10].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi10[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi11[0b00].real.abs() < f64::EPSILON);
+        assert!(psi11[0b01].real.abs() < f64::EPSILON);
+        assert!(psi11[0b10].real.abs() < f64::EPSILON);
+        assert!((psi11[0b11].real + 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_controlled_pshift() {
+        let theta: f64 = PI / 3.0;
+
+        let states00: Vec<Complex> = vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states01: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states10: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states11: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+        ];
+
+        let mut psi00: QRegister = QRegister::new(states00);
+        let mut psi01: QRegister = QRegister::new(states01);
+        let mut psi10: QRegister = QRegister::new(states10);
+        let mut psi11: QRegister = QRegister::new(states11);
+
+        psi00.apply_controlled_pshift(theta, 0, 1);
+        psi01.apply_controlled_pshift(theta, 0, 1);
+        psi10.apply_controlled_pshift(theta, 0, 1);
+        psi11.apply_controlled_pshift(theta, 0, 1);
+
+        assert!((psi00[0b00].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi00[0b01].real.abs() < f64::EPSILON);
+        assert!(psi00[0b10].real.abs() < f64::EPSILON);
+        assert!(psi00[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi01[0b00].real.abs() < f64::EPSILON);
+        assert!((psi01[0b01].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi01[0b10].real.abs() < f64::EPSILON);
+        assert!(psi01[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi10[0b00].real.abs() < f64::EPSILON);
+        assert!(psi10[0b01].real.abs() < f64::EPSILON);
+        assert!((psi10[0b10].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi10[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi11[0b00].real.abs() < f64::EPSILON);
+        assert!(psi11[0b01].real.abs() < f64::EPSILON);
+        assert!(psi11[0b10].real.abs() < f64::EPSILON);
+        assert!((psi11[0b11].real - theta.cos()).abs() < f64::EPSILON);
+        assert!((psi11[0b11].imag - theta.sin()).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_controlled_unitary() {
+        let theta: f64 = PI / 3.0;
+
+        let g00: Complex = Complex::new(theta.cos(), -theta.sin());
+        let g01: Complex = Complex::new(0.0, 0.0);
+        let g10: Complex = Complex::new(0.0, 0.0);
+        let g11: Complex = Complex::new(theta.cos(), theta.sin());
+
+        let states00: Vec<Complex> = vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states01: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states10: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.0),
+        ];
+        let states11: Vec<Complex> = vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+        ];
+
+        let mut psi00: QRegister = QRegister::new(states00);
+        let mut psi01: QRegister = QRegister::new(states01);
+        let mut psi10: QRegister = QRegister::new(states10);
+        let mut psi11: QRegister = QRegister::new(states11);
+
+        psi00.apply_controlled_unitary(g00, g01, g10, g11, 0, 1);
+        psi01.apply_controlled_unitary(g00, g01, g10, g11, 0, 1);
+        psi10.apply_controlled_unitary(g00, g01, g10, g11, 0, 1);
+        psi11.apply_controlled_unitary(g00, g01, g10, g11, 0, 1);
+
+        assert!((psi00[0b00].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi00[0b01].real.abs() < f64::EPSILON);
+        assert!(psi00[0b10].real.abs() < f64::EPSILON);
+        assert!(psi00[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi01[0b00].real.abs() < f64::EPSILON);
+        assert!((psi01[0b01].real - theta.cos()).abs() < f64::EPSILON);
+        assert!((psi01[0b01].imag + theta.sin()).abs() < f64::EPSILON);
+        assert!(psi01[0b10].real.abs() < f64::EPSILON);
+        assert!(psi01[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi10[0b00].real.abs() < f64::EPSILON);
+        assert!(psi10[0b01].real.abs() < f64::EPSILON);
+        assert!((psi10[0b10].real - 1.0).abs() < f64::EPSILON);
+        assert!(psi10[0b11].real.abs() < f64::EPSILON);
+
+        assert!(psi11[0b00].real.abs() < f64::EPSILON);
+        assert!(psi11[0b01].real.abs() < f64::EPSILON);
+        assert!(psi11[0b10].real.abs() < f64::EPSILON);
+        assert!((psi11[0b11].real - theta.cos()).abs() < f64::EPSILON);
+        assert!((psi11[0b11].imag - theta.sin()).abs() < f64::EPSILON);
     }
 }
