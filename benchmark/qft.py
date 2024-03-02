@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import random
 
 import qiskit
 
@@ -14,42 +13,55 @@ from qelvin import QRegister, QCircuit
 
 backend = Aer.get_backend('statevector_simulator')
 
-N = 11
-s = random.randint(0, 2**(N+1) - 1)
+def qft_qiskit(N):
+    psi = QuantumRegister(N)
+    circ = QuantumCircuit(psi)
 
 
-qelvin_psi = QRegister(N);
-qelvin_circ = QCircuit(qelvin_psi)
+    for j in range(N):
+        for k in range(j):
+            circ.cp(np.pi/float(2**(j-k)), psi[j], psi[k])
+        circ.h(psi[j])
 
-start = time.time()
 
-for j in range(N):
-    for k in range(j):
-        qelvin_circ.cp(np.pi/float(2**(j-k)), j, k)
-    qelvin_circ.h(j)
+    start = time.time()
 
-qelvin_circ.run()
+    job_sim = execute(circ, backend)
+    sim_result = job_sim.result()
 
-outputstate_qelvin = qelvin_circ.state();
+    return time.time() - start
 
-print("Elapsed qelvin:\t\t\t{0:.2f}ms".format((time.time()-start)*1000))
+def qft_qelvin(N):
+    psi = QRegister(N)
+    circ = QCircuit(psi)
 
-qiskit_psi = QuantumRegister(N)
-qiskit_circ = QuantumCircuit(qiskit_psi)
+    for j in range(N):
+        for k in range(j):
+            circ.cp(np.pi/float(2**(j-k)), j, k)
+        circ.h(j)
 
-for j in range(N):
-    for k in range(j):
-        qiskit_circ.cp(np.pi/float(2**(j-k)), qiskit_psi[j], qiskit_psi[k])
-    qiskit_circ.h(qiskit_psi[j])
+    start = time.time()
 
-start = time.time()
-job_sim = execute(qiskit_circ, backend)
-sim_result = job_sim.result()
+    circ.run()
 
-print("Elapsed Qiskit:\t\t\t{0:.2f}ms".format((time.time()-start)*1000))
+    return time.time() - start
 
-outputstate_qiskit = sim_result.get_statevector(qiskit_circ, decimals=3)
+if __name__ == '__main__':
+    t_qiskit = np.array([])
+    t_qelvin = np.array([])
 
-if N <= 5:
-    print("Output state QSim: {}".format(outputstate_qelvin))
-    print("Output state Qiskit: {}".format(outputstate_qiskit))
+    for N in range(1, 26):
+        t_qiskit = np.append(t_qiskit, qft_qiskit(N))
+        t_qelvin = np.append(t_qelvin, qft_qelvin(N))
+
+    plt.plot(np.arange(1, 26), t_qiskit, label="qiskit")
+    plt.plot(np.arange(1, 26), t_qelvin, label="qelvin")
+
+    plt.xlabel("number of qubits")
+    plt.ylabel("execution time (s)")
+
+    plt.legend()
+    plt.grid()
+    plt.axis('tight')
+
+    plt.show()
