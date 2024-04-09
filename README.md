@@ -8,7 +8,7 @@ git clone https://github.com/dannasman/qelvin.git && cd qelvin
 ```
 Create and activate a new python `virtualenv`:
 ```
-python -m venv .env
+python3 -m venv .env
 source .env/bin/activate
 ```
 Install all the requirements in `requirements.txt`:
