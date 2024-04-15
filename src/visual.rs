@@ -340,26 +340,32 @@ impl VisualCircuit {
                 }
             }
         });
-
         let mut circuit: String = String::new();
         let max_len: usize = (nqubits - 1).to_string().len() + 3;
-        for i in 0..nqubits {
-            let i_len: usize = i.to_string().len() + 3;
-            for j in 0..5 {
-                if j == 2 {
-                    circuit.push_str(&format!("{}q{}---", " ".repeat(max_len - i_len), i));
-                    grid[i]
-                        .iter()
-                        .for_each(|g| circuit.push_str(&g.get_line(j)));
-                    circuit.push_str("----\n");
-                } else {
-                    circuit.push_str(&" ".repeat(max_len + 1));
-                    grid[i]
-                        .iter()
-                        .for_each(|g| circuit.push_str(&g.get_line(j)));
-                    circuit.push_str(" \n");
+        let grid_len = grid[0].len();
+        let mut k = 0;
+        while k < grid_len {
+            for i in 0..nqubits {
+                let i_len: usize = i.to_string().len() + 3;
+                for j in 0..5 {
+                    let mut kk = k;
+                    if j == 2 {
+                        circuit.push_str(&format!("{}q{}---", " ".repeat(max_len - i_len), i));
+                    } else {
+                        circuit.push_str(&" ".repeat(max_len + 1));
+                    }
+                    while kk < k + 10 && kk < grid_len {
+                        circuit.push_str(&grid[i][kk].get_line(j));
+                        kk += 1;
+                    }
+                    if j == 2 {
+                        circuit.push_str("----\n");
+                    } else {
+                        circuit.push_str("    \n");
+                    }
                 }
             }
+            k += 10;
         }
         VisualCircuit { circuit: circuit }
     }
