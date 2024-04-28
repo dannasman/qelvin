@@ -166,6 +166,40 @@ impl PyQCircuit {
             .controlled_unitary(g00, g01, g10, g11, control, target);
     }
 
+    fn c2x(mut slf: PyRefMut<'_, Self>, control1: usize, control2: usize, target: usize) {
+        slf.inner.doubly_controlled_pauli_x(control1, control2, target);
+    }
+
+    fn c2y(mut slf: PyRefMut<'_, Self>, control1: usize, control2: usize, target: usize) {
+        slf.inner.doubly_controlled_pauli_y(control1, control2, target);
+    }
+
+    fn c2z(mut slf: PyRefMut<'_, Self>, control1: usize, control2: usize, target: usize) {
+        slf.inner.doubly_controlled_pauli_z(control1, control2, target);
+    }
+
+    fn c2p(mut slf: PyRefMut<'_, Self>, theta: f64, control1: usize, control2: usize, target: usize) {
+        slf.inner.doubly_controlled_pshift(theta, control1, control2, target);
+    }
+
+    fn c2u(
+        mut slf: PyRefMut<'_, Self>,
+        a: (f64, f64),
+        b: (f64, f64),
+        c: (f64, f64),
+        d: (f64, f64),
+        control1: usize,
+        control2: usize,
+        target: usize,
+    ) {
+        let g00: Complex = Complex::new(a.0, a.1);
+        let g01: Complex = Complex::new(b.0, b.1);
+        let g10: Complex = Complex::new(c.0, c.1);
+        let g11: Complex = Complex::new(d.0, d.1);
+        slf.inner
+            .doubly_controlled_unitary(g00, g01, g10, g11, control1, control2, target);
+    }
+
     fn run(mut slf: PyRefMut<'_, Self>) {
         slf.inner.run();
     }

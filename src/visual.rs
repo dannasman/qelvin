@@ -8,6 +8,7 @@ pub enum VisualBlock {
     VLine,
     Gate(String),
     Control((usize, usize)),
+    DControl((usize, usize, usize)),
 }
 
 impl VisualBlock {
@@ -42,6 +43,24 @@ impl VisualBlock {
                         String::from("     |     ")
                     } else {
                         String::from("           ")
+                    }
+                }
+                2 => String::from("-----o-----"),
+                _ => panic!("line number out of bounds"),
+            },
+            VisualBlock::DControl((c, c_other, t)) => match n {
+                0..=1 => {
+                    if c < t && c <= c_other {
+                        String::from("           ")
+                    } else {
+                        String::from("     |     ")
+                    }
+                }
+                3..=4 => {
+                    if c > t && c >= c_other {
+                        String::from("           ")
+                    } else {
+                        String::from("     |     ")
                     }
                 }
                 2 => String::from("-----o-----"),
@@ -328,6 +347,212 @@ impl VisualCircuit {
                             occupied[i] = true;
                         } else if i == c {
                             grid[i].push(VisualBlock::Control((c, t)));
+                            occupied[i] = true;
+                        } else if i < max && i > min {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::HLine);
+                            occupied[i] = false;
+                        }
+                    }
+                }
+            }
+            Gate::DCPauliX((c1, c2, t)) => {
+                let min: usize = cmp::min(t, cmp::min(c1, c2));
+                let max: usize = cmp::max(t, cmp::max(c1, c2));
+                if occupied[min..(max + 1)].iter().all(|&o| o == false) {
+                    for i in min..(max + 1) {
+                        grid[i].pop();
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    X    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        }
+                    }
+                } else {
+                    for i in 0..nqubits {
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    X    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else if i < max && i > min {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::HLine);
+                            occupied[i] = false;
+                        }
+                    }
+                }
+            }
+            Gate::DCPauliY((c1, c2, t)) => {
+                let min: usize = cmp::min(t, cmp::min(c1, c2));
+                let max: usize = cmp::max(t, cmp::max(c1, c2));
+                if occupied[min..(max + 1)].iter().all(|&o| o == false) {
+                    for i in min..(max + 1) {
+                        grid[i].pop();
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    Y    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        }
+                    }
+                } else {
+                    for i in 0..nqubits {
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    Y    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else if i < max && i > min {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::HLine);
+                            occupied[i] = false;
+                        }
+                    }
+                }
+            }
+            Gate::DCPauliZ((c1, c2, t)) => {
+                let min: usize = cmp::min(t, cmp::min(c1, c2));
+                let max: usize = cmp::max(t, cmp::max(c1, c2));
+                if occupied[min..(max + 1)].iter().all(|&o| o == false) {
+                    for i in min..(max + 1) {
+                        grid[i].pop();
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    Z    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        }
+                    }
+                } else {
+                    for i in 0..nqubits {
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    Z    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else if i < max && i > min {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::HLine);
+                            occupied[i] = false;
+                        }
+                    }
+                }
+            }
+            Gate::DCPhaseShift((theta, c1, c2, t)) => {
+                let min: usize = cmp::min(t, cmp::min(c1, c2));
+                let max: usize = cmp::max(t, cmp::max(c1, c2));
+                let theta_bounded = theta - (theta / (2.0 * PI)).trunc() * 2.0 * PI;
+                if occupied[min..(max + 1)].iter().all(|&o| o == false) {
+                    for i in min..(max + 1) {
+                        grid[i].pop();
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(format!("P({:+.3})", theta_bounded)));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        }
+                    }
+                } else {
+                    for i in 0..nqubits {
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(format!("P({:+.3})", theta_bounded)));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else if i < max && i > min {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::HLine);
+                            occupied[i] = false;
+                        }
+                    }
+                }
+            }
+            Gate::DCUnitary((_, _, _, _, c1, c2, t)) => {
+                let min: usize = cmp::min(t, cmp::min(c1, c2));
+                let max: usize = cmp::max(t, cmp::max(c1, c2));
+                if occupied[min..(max + 1)].iter().all(|&o| o == false) {
+                    for i in min..(max + 1) {
+                        grid[i].pop();
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    U    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
+                            occupied[i] = true;
+                        } else {
+                            grid[i].push(VisualBlock::VLine);
+                            occupied[i] = true;
+                        }
+                    }
+                } else {
+                    for i in 0..nqubits {
+                        if i == t {
+                            grid[i].push(VisualBlock::Gate(String::from("    U    ")));
+                            occupied[i] = true;
+                        } else if i == c1 {
+                            grid[i].push(VisualBlock::DControl((c1, c2, t)));
+                            occupied[i] = true;
+                        } else if i == c2 {
+                            grid[i].push(VisualBlock::DControl((c2, c1, t)));
                             occupied[i] = true;
                         } else if i < max && i > min {
                             grid[i].push(VisualBlock::VLine);

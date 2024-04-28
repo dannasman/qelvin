@@ -92,7 +92,7 @@ impl QRegister {
         let m3: __m256d = unsafe { _mm256_set_pd(g11.real, g11.real, g01.real, g01.real) };
         let m4: __m256d = unsafe { _mm256_set_pd(g11.imag, -g11.imag, g01.imag, -g01.imag) };
 
-        let step_block = |state: &mut [Complex]| {
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
             for (i, j) in (0..hb).zip(hb..b) {
                 let rz = state[i].real;
                 let iz = state[i].imag;
@@ -108,12 +108,12 @@ impl QRegister {
 
                 let (m0_0, m0_1, m0_2, m0_3): (f64, f64, f64, f64) = unsafe { mem::transmute(m0) };
 
-                (state[i].real, state[i].imag) = if (1 << c) & i > 0 {
+                (state[i].real, state[i].imag) = if (1 << c) & (nb*b + i) > 0 {
                     (m0_0, m0_1)
                 } else {
                     (state[i].real, state[i].imag)
                 };
-                (state[j].real, state[j].imag) = if (1 << c) & j > 0 {
+                (state[j].real, state[j].imag) = if (1 << c) & (nb*b + j) > 0 {
                     (m0_2, m0_3)
                 } else {
                     (state[j].real, state[j].imag)
@@ -121,7 +121,57 @@ impl QRegister {
             }
         };
 
-        self.par_chunks_mut(b).for_each(step_block);
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
+    }
+
+    pub fn apply_doubly_controlled_unitary(
+        &mut self,
+        g00: Complex,
+        g01: Complex,
+        g10: Complex,
+        g11: Complex,
+        c1: usize,
+        c2: usize,
+        t: usize,
+    ) {
+        let b: usize = 1 << (t + 1);
+        let hb: usize = 1 << t;
+
+        let m1: __m256d = unsafe { _mm256_set_pd(g10.real, g10.real, g00.real, g00.real) };
+        let m2: __m256d = unsafe { _mm256_set_pd(g10.imag, -g10.imag, g00.imag, -g00.imag) };
+        let m3: __m256d = unsafe { _mm256_set_pd(g11.real, g11.real, g01.real, g01.real) };
+        let m4: __m256d = unsafe { _mm256_set_pd(g11.imag, -g11.imag, g01.imag, -g01.imag) };
+
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
+            for (i, j) in (0..hb).zip(hb..b) {
+                let rz = state[i].real;
+                let iz = state[i].imag;
+                let ro = state[j].real;
+                let io = state[j].imag;
+
+                let m5: __m256d = unsafe { _mm256_set_pd(iz, rz, iz, rz) };
+                let m6: __m256d = unsafe { _mm256_set_pd(io, ro, io, ro) };
+                let mut m0: __m256d = unsafe { _mm256_mul_pd(m1, m5) };
+                m0 = unsafe { _mm256_fmadd_pd(m2, _mm256_permute_pd(m5, 0b0101), m0) };
+                m0 = unsafe { _mm256_fmadd_pd(m3, m6, m0) };
+                m0 = unsafe { _mm256_fmadd_pd(m4, _mm256_permute_pd(m6, 0b0101), m0) };
+
+                let (m0_0, m0_1, m0_2, m0_3): (f64, f64, f64, f64) = unsafe { mem::transmute(m0) };
+
+                (state[i].real, state[i].imag) = if (1 << c1) & (nb*b + i) > 0 && (1 << c2) & (nb*b + i) > 0 {
+                    (m0_0, m0_1)
+                } else {
+                    (state[i].real, state[i].imag)
+                };
+                (state[j].real, state[j].imag) = if (1 << c1) & (nb*b + j) > 0 && (1 << c2) & (nb*b + j) > 0 {
+                    (m0_2, m0_3)
+                } else {
+                    (state[j].real, state[j].imag)
+                };
+            }
+        };
+
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
     }
 
     pub fn apply_hadamard(&mut self, t: usize) {
@@ -189,9 +239,37 @@ impl QRegister {
         let m1: __m128d = unsafe { _mm_set_pd(sin_theta, cos_theta) };
         let m2: __m128d = unsafe { _mm_set_pd(cos_theta, -sin_theta) };
 
-        let step_block = |state: &mut [Complex]| {
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
             for j in hb..b {
-                if (1 << c) & j > 0 {
+                if (1 << c) & (nb*b + j) > 0 {
+                    let ro: f64 = state[j].real;
+                    let io: f64 = state[j].imag;
+
+                    let m3: __m128d = unsafe { _mm_set_pd(ro, ro) };
+                    let m4: __m128d = unsafe { _mm_set_pd(io, io) };
+                    let m5: __m128d = unsafe { _mm_mul_pd(m1, m3) };
+                    let m0: __m128d = unsafe { _mm_fmadd_pd(m2, m4, m5) };
+
+                    (state[j].real, state[j].imag) = unsafe { mem::transmute(m0) };
+                }
+            }
+        };
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
+    }
+
+    pub fn apply_doubly_controlled_pshift(&mut self, theta: f64, c1: usize, c2: usize, t: usize) {
+        let b: usize = 1 << (t + 1);
+        let hb: usize = 1 << t;
+
+        let cos_theta: f64 = theta.cos();
+        let sin_theta: f64 = theta.sin();
+
+        let m1: __m128d = unsafe { _mm_set_pd(sin_theta, cos_theta) };
+        let m2: __m128d = unsafe { _mm_set_pd(cos_theta, -sin_theta) };
+
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
+            for j in hb..b {
+                if (1 << c1) & (nb*b + j) > 0 && (1 << c2) & (nb*b + j) > 0 {
                     let ro: f64 = state[j].real;
                     let io: f64 = state[j].imag;
 
@@ -205,7 +283,7 @@ impl QRegister {
             }
         };
 
-        self.par_chunks_mut(b).for_each(step_block);
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
     }
 
     pub fn apply_pauli_x(&mut self, t: usize) {
@@ -225,24 +303,48 @@ impl QRegister {
         let b: usize = 1 << (t + 1);
         let hb: usize = 1 << t;
 
-        let step_block = |state: &mut [Complex]| {
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
             for (i, j) in (0..hb).zip(hb..b) {
                 let temp_real: f64 = state[i].real;
                 let temp_imag: f64 = state[i].imag;
 
-                if (1 << c) & i > 0 {
+                if (1 << c) & (nb*b + i) > 0 {
                     state[i].real = state[j].real;
                     state[i].imag = state[j].imag;
                 }
 
-                if (1 << c) & j > 0 {
+                if (1 << c) & (nb*b + j) > 0 {
                     state[j].real = temp_real;
                     state[j].imag = temp_imag;
                 }
             }
         };
 
-        self.par_chunks_mut(b).for_each(step_block);
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
+    }
+
+    pub fn apply_doubly_controlled_pauli_x(&mut self, c1: usize, c2: usize, t: usize) {
+        let b: usize = 1 << (t + 1);
+        let hb: usize = 1 << t;
+
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
+            for (i, j) in (0..hb).zip(hb..b) {
+                let temp_real: f64 = state[i].real;
+                let temp_imag: f64 = state[i].imag;
+
+                if (1 << c1) & (nb*b + i) > 0 && (1 << c2) & (nb*b + i) > 0 {
+                    state[i].real = state[j].real;
+                    state[i].imag = state[j].imag;
+                }
+
+                if (1 << c1) & (nb*b + j) > 0 && (1 << c2) & (nb*b + j) > 0 {
+                    state[j].real = temp_real;
+                    state[j].imag = temp_imag;
+                }
+            }
+        };
+
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
     }
 
     pub fn apply_pauli_y(&mut self, t: usize) {
@@ -266,23 +368,46 @@ impl QRegister {
         let b: usize = 1 << (t + 1);
         let hb: usize = 1 << t;
 
-        let step_block = |state: &mut [Complex]| {
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
             for (i, j) in (0..hb).zip(hb..b) {
                 let temp: Complex = state[i];
 
-                if (1 << c) & i > 0 {
+                if (1 << c) & (nb*b + i) > 0 {
                     state[i].real = state[j].imag;
                     state[i].imag = -state[j].real;
                 }
 
-                if (1 << c) & j > 0 {
+                if (1 << c) & (nb*b + j) > 0 {
                     state[j].real = -temp.imag;
                     state[j].imag = temp.real;
                 }
             }
         };
 
-        self.par_chunks_mut(b).for_each(step_block);
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
+    }
+
+    pub fn apply_doubly_controlled_pauli_y(&mut self, c1: usize, c2: usize, t: usize) {
+        let b: usize = 1 << (t + 1);
+        let hb: usize = 1 << t;
+
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
+            for (i, j) in (0..hb).zip(hb..b) {
+                let temp: Complex = state[i];
+
+                if (1 << c1) & (nb*b + i) > 0 && (1 << c2) & (nb*b + i) > 0 {
+                    state[i].real = state[j].imag;
+                    state[i].imag = -state[j].real;
+                }
+
+                if (1 << c1) & (nb*b + j) > 0 && (1 << c2) & (nb*b + j) > 0 {
+                    state[j].real = -temp.imag;
+                    state[j].imag = temp.real;
+                }
+            }
+        };
+
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
     }
 
     pub fn apply_pauli_z(&mut self, t: usize) {
@@ -303,16 +428,32 @@ impl QRegister {
         let b: usize = 1 << (t + 1);
         let hb: usize = 1 << t;
 
-        let step_block = |state: &mut [Complex]| {
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
             for j in hb..b {
-                if (1 << c) & j > 0 {
+                if (1 << c) & (nb*b + j) > 0 {
                     state[j].real = -state[j].real;
                     state[j].imag = -state[j].imag;
                 }
             }
         };
 
-        self.par_chunks_mut(b).for_each(step_block);
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
+    }
+
+    pub fn apply_doubly_controlled_pauli_z(&mut self, c1: usize, c2: usize, t: usize) {
+        let b: usize = 1 << (t + 1);
+        let hb: usize = 1 << t;
+
+        let step_block = |(nb, state): (usize, &mut [Complex])| {
+            for j in hb..b {
+                if (1 << c1) & (nb*b + j) > 0 && (1 << c2) & (nb*b + j) > 0 {
+                    state[j].real = -state[j].real;
+                    state[j].imag = -state[j].imag;
+                }
+            }
+        };
+
+        self.par_chunks_mut(b).enumerate().for_each(step_block);
     }
 
     pub fn quantum_fourier_transform(&mut self, nqubits: usize) {
@@ -329,8 +470,12 @@ impl QRegister {
 
 impl fmt::Display for QRegister {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let nqubits: usize = self.len().ilog2() as usize;
         write!(f, "[")?;
-        for state in self.iter() {
+        for (i, state) in self.iter().enumerate() {
+            if i != 0 && i % nqubits == 0 {
+                write!(f, "\n")?;
+            }
             write!(f, " {:.3}{:+.3}*j ", state.real, state.imag)?;
         }
         write!(f, "]")?;
@@ -366,6 +511,11 @@ pub enum Gate {
     CPauliZ((usize, usize)),
     CPhaseShift((f64, usize, usize)),
     CUnitary((Complex, Complex, Complex, Complex, usize, usize)),
+    DCPauliX((usize, usize, usize)),
+    DCPauliY((usize, usize, usize)),
+    DCPauliZ((usize, usize, usize)),
+    DCPhaseShift((f64, usize, usize, usize)),
+    DCUnitary((Complex, Complex, Complex, Complex, usize, usize, usize)),
 }
 
 pub struct QCircuit {
@@ -396,6 +546,15 @@ impl QCircuit {
                 Gate::CUnitary((g00, g01, g10, g11, c, t)) => {
                     self.psi.apply_controlled_unitary(g00, g01, g10, g11, c, t)
                 }
+                Gate::DCPauliX((c1, c2, t)) => self.psi.apply_doubly_controlled_pauli_x(c1, c2, t),
+                Gate::DCPauliY((c1, c2, t)) => self.psi.apply_doubly_controlled_pauli_y(c1, c2, t),
+                Gate::DCPauliZ((c1, c2, t)) => self.psi.apply_doubly_controlled_pauli_z(c1, c2, t),
+                Gate::DCPhaseShift((theta, c1, c2, t)) => {
+                    self.psi.apply_doubly_controlled_pshift(theta, c1, c2, t)
+                }
+                Gate::DCUnitary((g00, g01, g10, g11, c1, c2, t)) => self
+                    .psi
+                    .apply_doubly_controlled_unitary(g00, g01, g10, g11, c1, c2, t),
             }
         }
     }
@@ -451,6 +610,36 @@ impl QCircuit {
     ) {
         self.gates
             .push_back(Gate::CUnitary((g00, g01, g10, g11, c, t)));
+    }
+
+    pub fn doubly_controlled_pauli_x(&mut self, c1: usize, c2: usize, t: usize) {
+        self.gates.push_back(Gate::DCPauliX((c1, c2, t)));
+    }
+
+    pub fn doubly_controlled_pauli_y(&mut self, c1: usize, c2: usize, t: usize) {
+        self.gates.push_back(Gate::DCPauliY((c1, c2, t)));
+    }
+
+    pub fn doubly_controlled_pauli_z(&mut self, c1: usize, c2: usize, t: usize) {
+        self.gates.push_back(Gate::DCPauliZ((c1, c2, t)));
+    }
+
+    pub fn doubly_controlled_pshift(&mut self, theta: f64, c1: usize, c2: usize, t: usize) {
+        self.gates.push_back(Gate::DCPhaseShift((theta, c1, c2, t)));
+    }
+
+    pub fn doubly_controlled_unitary(
+        &mut self,
+        g00: Complex,
+        g01: Complex,
+        g10: Complex,
+        g11: Complex,
+        c1: usize,
+        c2: usize,
+        t: usize,
+    ) {
+        self.gates
+            .push_back(Gate::DCUnitary((g00, g01, g10, g11, c1, c2, t)));
     }
 }
 
